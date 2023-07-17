@@ -1,0 +1,549 @@
+from os import system, name, path, remove
+from random import randint
+import base64
+
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.fernet import Fernet, InvalidToken
+
+
+def generate_pass(size):
+    pas=''
+    for _ in range(size):
+        x=randint(33, 126)
+        pas+=chr(x)
+    return pas
+
+
+def clear():
+    if name=='nt':
+        system('cls')
+    else:
+        system('clear')
+
+
+def invalid():
+    print('Invalid command. Please enter a valid input')
+    return
+
+
+def no_data():
+    print("Oops! You don't have any saved account.")
+    print('Please add account first.')
+    print()
+    print()
+    while True:
+        print('1. Add New Account')
+        print('2. Change Key')
+        print()
+        print('#. Main Menu')
+        print('X. Exit')
+        cmnd=input()
+        if cmnd=='1':
+            add_new_account()
+        elif cmnd=='2':
+            change_key()
+        elif cmnd=='#':
+            main_menu()
+        elif cmnd=='x' or cmnd=='X':
+            exit()
+        else:
+            clear()
+            invalid()
+
+
+def store_account():
+    a=[]
+
+    for i in accounts:
+        line=i+' '+accounts[i][0]+' '+accounts[i][1]+'\n'
+        a.append(line)
+    msg=''.join(a)
+    msg=msg.encode()
+
+    cipher_text=cipher_suite.encrypt(msg)
+
+    f=open("pass_box.txt", "w")
+    f.write(cipher_text.decode())
+    f.close()
+
+
+def main_menu():
+    clear()
+    while True:
+        print('1. Show Account Data')
+        print('2. Add New Account')
+        print('3. Settings')
+        print('X. Exit')
+        cmnd=input()
+        if cmnd=='1':
+            show_account_data()
+        elif cmnd=='2':
+            add_new_account()
+        elif cmnd=='3':
+            settings()
+        elif cmnd=='x' or cmnd=='X':
+            exit()
+        else:
+            clear()
+            invalid()
+
+
+def show_account_data():
+    clear()
+    if accounts==dict():
+        no_data()
+    else:
+        while True:
+            print('1. View By Account Name')
+            print('2. View All Accounts')
+            print()
+            print('#. Main Menu')
+            print('X. Exit')
+            cmnd=input()
+            if cmnd=='1':
+                view_by_account_name()
+            elif cmnd=='2':
+                view_all_accounts()
+            elif cmnd=='#':
+                main_menu()
+            elif cmnd=='x' or cmnd=='X':
+                exit()
+            else:
+                clear()
+                invalid()
+
+
+def under_show_account_data():
+    print()
+    print()
+
+    while True:
+        print('0. Back to Show Account Data')
+        print('#. Main Menu')
+        print('X. Exit')
+        cmnd=input()
+        if cmnd=='0':
+            show_account_data()
+        elif cmnd=='#':
+            main_menu()
+        elif cmnd=='x' or cmnd=='X':
+            exit()
+        else:
+            clear()
+            invalid()
+
+
+def settings():
+    clear()
+    while True:
+        print('1. Remove Account')
+        print('2. Edit Account Data')
+        print('3. Clear All Data')
+        print('4. Change Key')
+        print()
+        print('#. Main Menu')
+        print('X. Exit')
+        cmnd=input()
+        if cmnd=='1':
+            remove_account()
+        elif cmnd=='2':
+            edit_account_data()
+        elif cmnd=='3':
+            clear_all_data()
+        elif cmnd=='4':
+            change_key()
+        elif cmnd=='#':
+            main_menu()
+        elif cmnd=='x' or cmnd=='X':
+            exit()
+        else:
+            clear()
+            invalid()
+
+
+def under_settings():
+    print()
+    print()
+
+    while True:
+        print('0. Back to Settings')
+        print('#. Main Menu')
+        print('X. Exit')
+        cmnd=input()
+        if cmnd=='0':
+            settings()
+        elif cmnd=='#':
+            main_menu()
+        elif cmnd=='x' or cmnd=='X':
+            exit()
+        else:
+            clear()
+            invalid()
+
+
+def add_new_account():
+    clear()
+    account=input('Enter the account name: ')
+    while account=='':
+        clear()
+        print('Account name is required')
+        account=input('Please enter a valid account name: ')
+    if account in accounts:
+        clear()
+        print("Oops! The account name", '"'+account+'"', "is already exists")
+        print('You can edit this accout from "Edit Account Data" option')
+        while True:
+            print()
+            print('1. Add New Account by another name')
+            print('2. Edit an existing account data')
+            print('#. Main Menu')
+            cmnd=input()
+            if cmnd=='1':
+                add_new_account()
+            elif cmnd=='#':
+                main_menu()
+            elif cmnd=='2':
+                edit_account_data()
+            else:
+                clear()
+                invalid()
+    clear()
+    user=input('Enter the user ID: ')
+    while user=='':
+        clear()
+        print('User ID is required')
+        user=input('Please enter a valid user ID: ')
+
+    clear()
+    password=input('Enter password (leave BLANK to Generate Password): ')
+    if password=='':
+        password=generate_pass(16)
+        while True:
+            clear()
+            print('Your Password is:', password)
+            print()
+            print('leave BLANK to use this password')
+            print('To generate a new password, input "n"')
+            pas=input('Or, you can input your password: ')
+            if pas=='':
+                break
+            elif pas=='n' or pas=='N':
+                password=generate_pass(16)
+            else:
+                password=pas
+                break
+
+    accounts[account]=[user, password]
+    store_account()
+    clear()
+    print('New account', '"'+account+'"', 'has added successfully!')
+    print()
+    print()
+
+    while True:
+        print('1. Add New Account')
+        print('#. Main Menu')
+        print('X. Exit')
+        cmnd=input()
+        if cmnd=='1':
+            add_new_account()
+        elif cmnd=='#':
+            main_menu()
+        elif cmnd=='x' or cmnd=='X':
+            exit()
+        else:
+            clear()
+            invalid()
+
+
+def view_by_account_name():
+    clear()
+
+    i=input('Enter the account name to view: ')
+    while True:
+        if i not in accounts or i=='':
+            clear()
+            print('Oops! The name', '"'+i+'"', 'is not exist.')
+            print('Remember! The names are case sensitive')
+            print()
+            i=input('Please try another name to view: ')
+        else:
+            break
+    user_key=input('Please confirm your key to proceed: ')
+    check_key(user_key)
+    clear()
+    account='Account Name'.ljust(25)
+    user='User name'.ljust(30)
+    password='Password'.ljust(20)
+    print(account, user, password)
+    print()
+
+    account=i.ljust(25)
+    user=accounts[i][0].ljust(30)
+    password=accounts[i][1].ljust(20)
+    print(account, user, password)
+
+    under_show_account_data()
+
+
+def view_all_accounts():
+    clear()
+    user_key=input('Please confirm your key to proceed: ')
+    check_key(user_key)
+    clear()
+    index='No.'.ljust(5)
+    account='Account Name'.ljust(25)
+    user='User name'.ljust(30)
+    password='Password'.ljust(20)
+    print(index, account, user, password)
+    print()
+    cnt=0
+    for i in accounts:
+        cnt+=1
+        index=str(cnt)+'.'.ljust(5)
+        account=i.ljust(25)
+        user=accounts[i][0].ljust(30)
+        password=accounts[i][1].ljust(20)
+        print(index, account, user, password)
+
+    under_show_account_data()
+
+
+def remove_account():
+    clear()
+    if accounts==dict():
+        no_data()
+    else:
+        i=input('Enter the account name you want to delete: ')
+        while i not in accounts:
+            clear()
+            print('Oops! The name', '"'+i+'"', 'is not exist.')
+            print('Remember! The names are case sensitive')
+            print()
+            i=input('Please try another name to delete: ')
+        del (accounts[i])
+        store_account()
+        clear()
+        print('The', '"'+i+'"', 'account is successfully removed')
+
+        under_settings()
+
+
+def edit_account_data():
+    clear()
+    if accounts==dict():
+        no_data()
+    else:
+        i=input('Enter the account name to edit: ')
+        while True:
+            if i not in accounts or i=='':
+                clear()
+                print('Oops! The name', '"'+i+'"', 'is not exist.')
+                print('Remember! The names are case sensitive')
+                print()
+                i=input('Please try another name to edit: ')
+            else:
+                break
+        clear()
+        user=input('Enter the new user ID (leave BLANK to keep unchanged): ')
+        if user=='':
+            user=accounts[i][0]
+        clear()
+        print('To Generate new Password, Please input "g"')
+        password=input('or, Enter the new password (leave BLANK to keep unchanged): ')
+
+        if password=='g' or password=='G':
+            password=generate_pass(16)
+            while True:
+                clear()
+                print('Your Password is:', password)
+                print()
+                print('leave BLANK to use this password')
+                print('To generate a new password, input "n"')
+                print('To keep the password unchanged, input "u"')
+                pas=input('Or, you can input your password: ')
+                if pas=='':
+                    break
+                elif pas=='n' or pas=='N':
+                    password=generate_pass(16)
+                elif pas=='u' or pas=='U':
+                    password=accounts[i][1]
+                    break
+                else:
+                    password=pas
+                    break
+        elif password=='':
+            password=accounts[i][1]
+
+        accounts[i]=[user, password]
+        store_account()
+        clear()
+        print('The data of', '"'+i+'"', 'account is successfully edited!')
+
+        under_settings()
+
+
+def clear_all_data():
+    clear()
+    print('Are you sure? Whole data will be deleted permanently!')
+    user_key=input('Please confirm your key to proceed: ')
+    check_key(user_key)
+
+    accounts.clear()
+    store_account()
+    clear()
+    print('All data is successfully cleared!')
+
+    under_settings()
+
+
+def change_key():
+    clear()
+    global KEY, cipher_suite
+    old_key=input('Enter the current key: ')
+    new_key=input('Enter the new key: ')
+    new_key_confirm=input('Re enter the new key to confirm: ')
+    clear()
+    if new_key!=new_key_confirm:
+        print("New key doesn't match.")
+        input('Hit ENTER to reset')
+        change_key()
+    else:
+        if KEY!=old_key:
+            print("Current key doesn't match.")
+            input('Hit ENTER to reset')
+            change_key()
+        else:
+            KEY=new_key
+            cipher_suite=suite(new_key)
+            store_account()
+            print('Your key is successfully changed!')
+
+            under_settings()
+
+
+def first_time():
+    global key
+    print("Welcome to Parag's secured password box program.")
+    print()
+    print("At first, we need a secret key to access this app and encrypt it's data")
+    key=input('Please choose a secret key to get started: ')
+    while key=='':
+        clear()
+        print('Invalid input. Key can not be remain empty.')
+        print()
+        key=input('Please choose a secret key to get started: ')
+    clear()
+    cipher_suite=suite(key)
+    cipher_text=cipher_suite.encrypt(b'')
+
+    f=open("pass_box.txt", "w")
+    f.write(cipher_text.decode())
+    f.close()
+
+    print("Congratulation! You successfully set your secret key!")
+    input("Hit ENTER to proceed")
+    clear()
+
+
+def opening_key(user_key):
+    global accounts
+    cnt=0
+
+    while True:
+
+        cipher_suite=suite(user_key)
+        try:
+            decrypted=cipher_suite.decrypt(whole_data)
+            return decrypted, cipher_suite, user_key
+        except InvalidToken:
+            cnt+=1
+            if cnt>9:
+                del (accounts)
+                f=open("pass_box.txt", "w")
+                f.write("Who The Hell Are You?")
+                #remove("pass_box.txt")
+                f.close()
+
+                remove("pass_box.txt")
+                last=input("You're not the actual owner. GET OUT FROM HERE!")
+                exit()
+
+            else:
+                clear()
+                print("Your key doesn't match.")
+                print("This is your wrong submission number", cnt)
+                print("Remember, 10 wrong submission cause the whole data be deleted!")
+                print()
+                user_key=input('Plese insert your key correctly: ')
+
+
+def check_key(user_key):
+    global accounts, KEY
+    cnt=0
+
+    while True:
+        if user_key==KEY:
+            return
+        else:
+            cnt+=1
+            if cnt>9:
+                key=''
+                del (accounts)
+                f=open("pass_box.txt", "w")
+                f.write("Who The Hell Are You?")
+                f.close()
+                remove("pass_box.txt")
+                last=input("You're not the actual owner. GET OUT FROM HERE!")
+                exit()
+
+            else:
+                clear()
+                print("Your key doesn't match.")
+                print("This is your wrong submission number", cnt)
+                print("Remember, 10 wrong submission cause the whole data be deleted!")
+                print()
+                user_key=input('Plese insert your key correctly: ')
+
+
+def suite(user_key):
+    password_provided=user_key
+    password=password_provided.encode()
+    salt=b'\x92\x108\xe4%\x067\xd9\xeb\x89\xdat\xd0\xbd\x9f\xd6'
+
+    kdf=PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=salt,
+        iterations=100000,
+        backend=default_backend()
+    )
+    key=base64.urlsafe_b64encode(kdf.derive(password))
+    return Fernet(key)
+
+
+
+
+accounts=dict()
+if not path.exists('pass_box.txt'):
+    key='@;D%T"e"v1&#2dmg'
+    first_time()
+
+fr=open("pass_box.txt", "r")
+whole_data=fr.read()
+whole_data=whole_data.encode()
+fr.close()
+
+user_key=input('Please enter your secret KEY: ')
+whole_data, cipher_suite, KEY=opening_key(user_key)
+
+whole_data=whole_data.decode()
+
+for line in whole_data.splitlines():
+    account, user, password=line.split()
+    accounts[account]=[user, password.strip()]
+
+
+main_menu()
